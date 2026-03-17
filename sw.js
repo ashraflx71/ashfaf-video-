@@ -1,12 +1,12 @@
 const CACHE_NAME = 'video-pwa-v1';
 const urlsToCache = [
-    '/my-video-/',
-    '/my-video-/index.html',
-    '/my-video-/style.css',
-    '/my-video-/script.js',
-    '/my-video-/manifest.json',
-    '/my-video-/icon-192.png',
-    '/my-video-/icon-512.png'
+    '/ashraf-video/',
+    '/ashraf-video/index.html',
+    '/ashraf-video/style.css',
+    '/ashraf-video/script.js',
+    '/ashraf-video/manifest.json',
+    '/ashraf-video/icon-192.png',
+    '/ashraf-video/icon-512.png'
 ];
 
 self.addEventListener('install', event => {
