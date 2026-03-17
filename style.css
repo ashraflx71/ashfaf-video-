@@ -1,72 +1,120 @@
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-align: center;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 20px;
-    direction: rtl;
+// إعدادات Canvas
+const canvas = document.getElementById('videoCanvas');
+const ctx = canvas.getContext('2d', { preserveDrawingBuffer: true });
+
+let animationFrame;
+let count = 0;
+
+// دالة الرسم المستمر
+function draw() {
+    // مسح الشاشة
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // خلفية سوداء
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // رسم شكل متحرك (مستطيل يتغير لونه وموقعه)
+    ctx.fillStyle = `hsl(${count % 360}, 100%, 50%)`;
+    ctx.fillRect(100 + (count % 200), 100, 100, 100);
+
+    // نص متحرك يعرض العدد
+    ctx.font = '30px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(`العداد: ${count}`, 50, 300);
+
+    // رسم نص إضافي
+    ctx.font = '20px Arial';
+    ctx.fillStyle = '#aaa';
+    ctx.fillText('PWA مولد فيديو', 50, 350);
+
+    count++;
+    animationFrame = requestAnimationFrame(draw);
 }
 
-h1 {
-    color: #333;
+// بدء الرسم
+draw();
+
+// إيقاف الرسم إذا احتجنا (اختياري)
+function stopDrawing() {
+    cancelAnimationFrame(animationFrame);
 }
 
-canvas {
-    border: 2px solid #333;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    max-width: 100%;
-    height: auto;
+// -------------------- تسجيل الفيديو --------------------
+let mediaRecorder;
+let recordedChunks = [];
+
+// أزرار
+const recordBtn = document.getElementById('recordBtn');
+const stopBtn = document.getElementById('stopBtn');
+const downloadLink = document.getElementById('downloadLink');
+
+recordBtn.addEventListener('click', startRecording);
+stopBtn.addEventListener('click', stopRecording);
+
+function startRecording() {
+    // الحصول على stream من canvas بمعدل 30 إطار/ثانية
+    const stream = canvas.captureStream(30);
+
+    // محاولة استخدام برنامج الترميز المفضل
+    let options = { mimeType: 'video/webm; codecs=vp9' };
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/webm' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            alert('متصفحك لا يدعم تسجيل الفيديو!');
+            return;
+        }
+    }
+
+    mediaRecorder = new MediaRecorder(stream, options);
+
+    // عند توفر جزء جديد من الفيديو
+    mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+        }
+    };
+
+    // عند انتهاء التسجيل
+    mediaRecorder.onstop = () => {
+        // إنشاء blob من الأجزاء
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+
+        // إعداد رابط التحميل
+        downloadLink.href = url;
+        downloadLink.download = 'فيديو-من-كانفاس.webm';
+        downloadLink.textContent = '📥 اضغط لتحميل الفيديو';
+
+        // تنظيف الذاكرة بعد 10 ثوانٍ
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 10000);
+
+        // تفريغ المصفوفة
+        recordedChunks = [];
+    };
+
+    // بدء التسجيل
+    mediaRecorder.start();
+    recordBtn.disabled = true;
+    stopBtn.disabled = false;
+    downloadLink.textContent = ''; // إخفاء رابط التحميل القديم
 }
 
-.controls {
-    margin: 20px 0;
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        recordBtn.disabled = false;
+        stopBtn.disabled = true;
+    }
 }
 
-.btn {
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin: 0 5px;
-    transition: background-color 0.3s;
-}
-
-.btn.record {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.btn.record:hover {
-    background-color: #45a049;
-}
-
-.btn.stop {
-    background-color: #f44336;
-    color: white;
-}
-
-.btn.stop:hover {
-    background-color: #da190b;
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.download-link {
-    display: inline-block;
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #008CBA;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    font-size: 16px;
-}
-
-.download-link:hover {
-    background-color: #0077a3;
-}
+// -------------------- Service Worker للتشغيل دون اتصال --------------------
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('✅ Service Worker registered'))
+            .catch(err => console.log('❌ Service Worker error:', err));
+    });
+    }
