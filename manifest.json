@@ -1,0 +1,23 @@
+{
+    "name": "مولد الفيديوهات PWA",
+    "short_name": "مولد فيديو",
+    "description": "تطبيق لتسجيل فيديو من Canvas والعمل دون اتصال",
+    "start_url": "/my-video-/",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
